@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+coverage
+logs
+*.log
+.env
+backend/generated
+backend/storage/generated/*
+backend/storage/uploads/*
+!backend/storage/generated/.gitkeep
+!backend/storage/uploads/.gitkeep
