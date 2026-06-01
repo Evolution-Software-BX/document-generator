@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { FilesModule } from '../files/files.module';
+import { GenerationModule } from '../generations/generation.module';
 import { DocumentContextBuilder } from './builders/document-context.builder';
 import { EstimateTableBuilder } from './builders/estimate-table.builder';
 import { LegalTextBuilder } from './builders/legal-text.builder';
@@ -9,6 +11,7 @@ import { DocumentsService } from './documents.service';
 import { DocxTemplateRenderer } from './renderers/docx-template.renderer';
 
 @Module({
+  imports: [FilesModule, GenerationModule],
   controllers: [DocumentsController],
   providers: [
     DocumentsService,

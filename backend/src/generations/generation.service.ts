@@ -13,6 +13,15 @@ export class GenerationService {
     });
   }
 
+  createProcessing(data: CreateGenerationDto) {
+    return this.prisma.generation.create({
+      data: {
+        ...data,
+        status: 'PROCESSING',
+      } as any,
+    });
+  }
+
   findAll() {
     return this.prisma.generation.findMany({
       orderBy: { createdAt: 'desc' },

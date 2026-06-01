@@ -30,6 +30,11 @@ export class ContractsController {
     return this.contractsService.attachEstimate(Number(id), file);
   }
 
+  @Post(':id/generate')
+  generate(@Param('id') id: string) {
+    return this.contractsService.generate(Number(id));
+  }
+
   @Get()
   findAll() {
     return this.contractsService.findAll();

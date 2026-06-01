@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DocumentsService } from '../documents/documents.service';
 import { EstimatesService } from '../estimates/estimates.service';
 import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14,6 +15,7 @@ export class ContractsService {
     private readonly contractNumberService: ContractNumberService,
     private readonly contractValidationService: ContractValidationService,
     private readonly estimatesService: EstimatesService,
+    private readonly documentsService: DocumentsService,
   ) {}
 
   async create(data: CreateContractDto) {
@@ -140,5 +142,9 @@ export class ContractsService {
       contract: updatedContract,
       estimate,
     };
+  }
+
+  generate(id: number) {
+    return this.documentsService.generateContract(id);
   }
 }

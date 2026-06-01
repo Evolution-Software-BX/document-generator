@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { DocumentsModule } from '../documents/documents.module';
 import { EstimatesModule } from '../estimates/estimates.module';
 import { ContractsController } from './contracts.controller';
 import { ContractsService } from './contracts.service';
@@ -7,7 +8,7 @@ import { ContractNumberService } from './services/contract-number.service';
 import { ContractValidationService } from './services/contract-validation.service';
 
 @Module({
-  imports: [EstimatesModule],
+  imports: [DocumentsModule, EstimatesModule],
   controllers: [ContractsController],
   providers: [
     ContractsService,
