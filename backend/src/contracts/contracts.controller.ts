@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
@@ -10,6 +22,12 @@ export class ContractsController {
   @Post()
   create(@Body() data: CreateContractDto) {
     return this.contractsService.create(data);
+  }
+
+  @Post(':id/estimate')
+  @UseInterceptors(FileInterceptor('file'))
+  attachEstimate(@Param('id') id: string, @UploadedFile() file?: EstimateUploadFile) {
+    return this.contractsService.attachEstimate(Number(id), file);
   }
 
   @Get()

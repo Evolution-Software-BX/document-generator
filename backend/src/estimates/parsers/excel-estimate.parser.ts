@@ -56,11 +56,16 @@ export class ExcelEstimateParser {
     const totalHours = this.round(works.reduce((sum, work) => sum + work.totalHours, 0));
     const totalAmount = this.round(works.reduce((sum, work) => sum + work.amount, 0));
     const stages = this.groupByStages(works, warnings);
+    const metadataWithTotals = {
+      ...metadata,
+      totalHours: metadata.totalHours ?? totalHours,
+      totalAmount: metadata.totalAmount ?? totalAmount,
+    };
 
-    this.validateTotals(metadata, totalHours, totalAmount, warnings);
+    this.validateTotals(metadataWithTotals, totalHours, totalAmount, warnings);
 
     return {
-      metadata,
+      metadata: metadataWithTotals,
       stages,
       totalHours,
       totalAmount,
@@ -124,8 +129,8 @@ export class ExcelEstimateParser {
       estimateStage: this.findMetadataText(rows, ['этап оценки', 'стадия оценки']),
       architectCheck: this.findMetadataText(rows, ['проверка архитектором', 'проверка сба', 'архитектор']),
       hourRate: this.findMetadataNumber(rows, ['ставка часа', 'ставка', 'стоимость часа']),
-      totalHours: this.findMetadataNumber(rows, ['оценка часы', 'всего часов', 'итого часов']),
-      totalAmount: this.findMetadataNumber(rows, ['оценка деньги', 'оценка сумма', 'итого', 'деньги', 'сумма']),
+      totalHours: this.findMetadataNumber(rows, ['оценка часы', 'оценка, часы', 'всего часов', 'итого часов']),
+      totalAmount: this.findMetadataNumber(rows, ['оценка деньги', 'оценка, деньги', 'оценка сумма', 'итого', 'деньги', 'сумма']),
     };
   }
 

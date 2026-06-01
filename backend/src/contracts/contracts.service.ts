@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EstimatesService } from '../estimates/estimates.service';
+import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
@@ -11,6 +13,7 @@ export class ContractsService {
     private readonly prisma: PrismaService,
     private readonly contractNumberService: ContractNumberService,
     private readonly contractValidationService: ContractValidationService,
+    private readonly estimatesService: EstimatesService,
   ) {}
 
   async create(data: CreateContractDto) {
@@ -99,7 +102,43 @@ export class ContractsService {
     return this.prisma.contract.delete({ where: { id } });
   }
 
-  async nextNumber() {
-    return { number: await this.contractNumberService.nextNumber() };
+  async attachEstimate(id: number, file?: EstimateUploadFile) {
+    const contract = await this.prisma.contract.findUnique({
+      where: { id },
+    });
+
+    if (!contract) {
+      throw new NotFoundException('Contract not found');
+    }
+
+    const estimate = await this.estimatesService.parse(file);
+    const amount = estimate.totalAmount;
+    const prepaymentAmount =
+      contract.paymentType === 'DOUBLE' && contract.prepaymentPercent !== null
+        ? (amount * contract.prepaymentPercent) / 100
+        : null;
+    const postpaymentAmount =
+      contract.paymentType === 'DOUBLE' && contract.postpaymentPercent !== null
+        ? (amount * contract.postpaymentPercent) / 100
+        : null;
+    const updatedContract = await this.prisma.contract.update({
+      where: { id },
+      data: {
+        estimateJson: estimate as any,
+        amount,
+        prepaymentAmount,
+        postpaymentAmount,
+      } as any,
+      include: {
+        client: true,
+        template: true,
+        generations: true,
+      },
+    });
+
+    return {
+      contract: updatedContract,
+      estimate,
+    };
   }
 }
