@@ -16,13 +16,41 @@ export class DocxTemplateRenderer {
         start: '{{',
         end: '}}',
       },
+      nullGetter: part => `{{${part.value}}}`,
     });
 
     doc.render(context);
 
-    return doc.getZip().generate({
+    const content = doc.getZip().generate({
       type: 'nodebuffer',
       compression: 'DEFLATE',
     }) as Buffer;
+
+    this.assertNoUnresolvedPlaceholders(content);
+
+    return content;
+  }
+
+  private assertNoUnresolvedPlaceholders(content: Buffer) {
+    const zip = new PizZip(content);
+    const unresolved = new Set<string>();
+
+    for (const fileName of Object.keys(zip.files)) {
+      if (!fileName.startsWith('word/') || !fileName.endsWith('.xml')) {
+        continue;
+      }
+
+      const file = zip.file(fileName);
+      const text = file?.asText() ?? '';
+      const matches = text.match(/\{\{[^}]+}}/g) ?? [];
+
+      for (const match of matches) {
+        unresolved.add(match);
+      }
+    }
+
+    if (unresolved.size > 0) {
+      throw new Error(`Unresolved document placeholders: ${Array.from(unresolved).join(', ')}`);
+    }
   }
 }
