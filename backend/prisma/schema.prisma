@@ -75,7 +75,7 @@ model Contract {
   id                  Int          @id @default(autoincrement())
   number              String       @unique
   date                DateTime
-  city                String       @default("Penza")
+  city                String       @default("г. Пенза")
   type                ContractType
   legalType           LegalType
   paymentType         PaymentType

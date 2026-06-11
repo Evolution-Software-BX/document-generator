@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { readFile } from 'node:fs/promises';
 
 const Docxtemplater = require('docxtemplater');
@@ -6,32 +6,52 @@ const PizZip = require('pizzip');
 
 @Injectable()
 export class DocxTemplateRenderer {
+  private readonly logger = new Logger(DocxTemplateRenderer.name);
+
   async render(templatePath: string, context: Record<string, unknown>) {
-    const template = await readFile(templatePath);
-    const zip = new PizZip(template);
-    const doc = new Docxtemplater(zip, {
-      paragraphLoop: true,
-      linebreaks: true,
-      delimiters: {
-        start: '{{',
-        end: '}}',
-      },
-      nullGetter: part => `{{${part.value}}}`,
+    this.logger.log('[docx-render] started', {
+      templatePath,
     });
 
-    doc.render(context);
+    try {
+      const template = await readFile(templatePath);
+      const zip = new PizZip(template);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+        delimiters: {
+          start: '{{',
+          end: '}}',
+        },
+        nullGetter: part => `{{${part.value}}}`,
+      });
 
-    const content = doc.getZip().generate({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-    }) as Buffer;
+      doc.render(context);
 
-    this.assertNoUnresolvedPlaceholders(content);
+      const content = doc.getZip().generate({
+        type: 'nodebuffer',
+        compression: 'DEFLATE',
+      }) as Buffer;
 
-    return content;
+      this.assertNoUnresolvedPlaceholders(content);
+      this.logger.log('[docx-render] completed', {
+        templatePath,
+      });
+
+      return content;
+    } catch (error) {
+      this.logger.error('[docx-render] failed', {
+        templatePath,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      throw error;
+    }
   }
 
   private assertNoUnresolvedPlaceholders(content: Buffer) {
+    this.logger.log('[placeholder-check] started');
+
     const zip = new PizZip(content);
     const unresolved = new Set<string>();
 
@@ -50,7 +70,12 @@ export class DocxTemplateRenderer {
     }
 
     if (unresolved.size > 0) {
+      this.logger.warn('[placeholder-check] unresolved placeholders found', {
+        placeholders: Array.from(unresolved),
+      });
       throw new Error(`Unresolved document placeholders: ${Array.from(unresolved).join(', ')}`);
     }
+
+    this.logger.log('[placeholder-check] no unresolved placeholders');
   }
 }

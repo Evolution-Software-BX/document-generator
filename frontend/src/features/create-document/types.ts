@@ -25,6 +25,8 @@ export interface FullGenerateClientPayload {
 
 export interface FullGenerateContractPayload {
   date: string;
+  city?: string;
+  templateCode?: string;
   type: ContractType;
   legalType: LegalType;
   paymentType: PaymentType;
@@ -35,6 +37,8 @@ export interface FullGenerateContractPayload {
   servicePeriodUnit?: string;
   tzPeriodValue?: number;
   tzPeriodUnit?: string;
+  warrantyPeriodValue?: number;
+  warrantyPeriodUnit?: string;
 }
 
 export interface FullGeneratePayload {

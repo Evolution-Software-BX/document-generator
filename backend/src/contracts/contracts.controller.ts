@@ -4,6 +4,7 @@ import {
   Delete,
   BadRequestException,
   Get,
+  Logger,
   Param,
   Patch,
   Post,
@@ -19,6 +20,8 @@ import { UpdateContractDto } from './dto/update-contract.dto';
 
 @Controller('contracts')
 export class ContractsController {
+  private readonly logger = new Logger(ContractsController.name);
+
   constructor(private readonly contractsService: ContractsService) {}
 
   @Post()
@@ -29,6 +32,15 @@ export class ContractsController {
   @Post('full-generate')
   @UseInterceptors(FileInterceptor('file'))
   fullGenerate(@Body('payload') payload: string, @UploadedFile() file?: EstimateUploadFile) {
+    this.logger.log('[full-generate] request received');
+    this.logger.log('[full-generate] file received', {
+      fileName: file?.originalname,
+      size: file?.buffer?.length,
+    });
+    this.logger.log('[full-generate] raw payload received', {
+      payloadLength: payload?.length ?? 0,
+    });
+
     if (!payload) {
       throw new BadRequestException('Payload is required');
     }
@@ -40,6 +52,17 @@ export class ContractsController {
     } catch {
       throw new BadRequestException('Payload must be valid JSON');
     }
+
+    this.logger.log('[full-generate] parsed payload', {
+      type: parsedPayload.contract?.type,
+      legalType: parsedPayload.contract?.legalType,
+      paymentType: parsedPayload.contract?.paymentType,
+      hasTz: parsedPayload.contract?.hasTz,
+      date: parsedPayload.contract?.date,
+      city: parsedPayload.contract?.city,
+      templateId: parsedPayload.contract?.templateId,
+      clientId: parsedPayload.clientId,
+    });
 
     return this.contractsService.fullGenerate(parsedPayload, file);
   }

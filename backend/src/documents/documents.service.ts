@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { access } from 'node:fs/promises';
 import { FilesService } from '../files/files.service';
 import { GenerationService } from '../generations/generation.service';
@@ -8,6 +8,8 @@ import { DocxTemplateRenderer } from './renderers/docx-template.renderer';
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly contextBuilder: DocumentContextBuilder,
@@ -44,23 +46,53 @@ export class DocumentsService {
     }
 
     const templatePath = this.filesService.resolveTemplate(contract.template.filePath);
+    this.logger.log('[template-file] resolved file path', {
+      templateFilePath: contract.template.filePath,
+      fullPath: templatePath,
+    });
 
     try {
       await access(templatePath);
+      this.logger.log('[template-file] file exists', {
+        exists: true,
+        fullPath: templatePath,
+      });
     } catch {
-      throw new NotFoundException('Template file not found');
+      this.logger.warn('[template-file] file exists', {
+        exists: false,
+        fullPath: templatePath,
+      });
+      throw new NotFoundException(`Template file not found: ${templatePath}`);
     }
 
     const context = this.contextBuilder.build(contract);
+    this.logger.log('[document-context] built', {
+      contextKeys: Object.keys(context),
+      estimateWorksCount: Array.isArray(context.estimate_works) ? context.estimate_works.length : 0,
+      amountNumber: context.amount_number,
+      amountTextExists: Boolean(context.amount_text),
+      servicePeriodText: context.service_period_text,
+      tzPeriodText: context.tz_period_text,
+      warrantyPeriodText: context.warranty_period_text,
+    });
+
     const generation = await this.generationService.createProcessing({
       contractId: contract.id,
       sourceDataJson: context,
     });
 
     try {
-      const content = await this.renderer.render(templatePath, context);
       const fileName = `contract_${contract.number}.docx`;
+      const outputPath = this.filesService.resolveGenerated(fileName);
+      this.logger.log('[docx-render] started', {
+        templatePath,
+        outputPath,
+      });
+      const content = await this.renderer.render(templatePath, context);
       const filePath = await this.filesService.saveGenerated(fileName, content);
+      this.logger.log('[docx-render] completed', {
+        outputPath: filePath,
+      });
       const updatedGeneration = await this.generationService.markSuccess(
         generation.id,
         fileName,

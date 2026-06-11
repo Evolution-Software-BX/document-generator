@@ -1,7 +1,7 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
-import { Download, FileSpreadsheet, Loader2, Moon, Send, Sun } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Loader2, Moon, Sun } from 'lucide-react';
 import { fullGenerateContract } from '@/shared/api/contracts.api';
 import { env } from '@/shared/config/env';
 import {
@@ -14,10 +14,39 @@ import {
 const contractTypes: ContractType[] = ['CRM', 'SITE', 'TRAINING'];
 const legalTypes: LegalType[] = ['OOO', 'IP'];
 const paymentTypes: PaymentType[] = ['SINGLE', 'DOUBLE'];
+const contractTypePresets: Record<
+  ContractType,
+  {
+    templateCode: string;
+    legalType: LegalType;
+    paymentType: PaymentType;
+    hasTz: boolean;
+  }
+> = {
+  CRM: {
+    templateCode: 'crm_ooo_double',
+    legalType: 'OOO',
+    paymentType: 'DOUBLE',
+    hasTz: true,
+  },
+  SITE: {
+    templateCode: 'site_ip_single_tz',
+    legalType: 'IP',
+    paymentType: 'SINGLE',
+    hasTz: true,
+  },
+  TRAINING: {
+    templateCode: 'training_ooo_single',
+    legalType: 'OOO',
+    paymentType: 'SINGLE',
+    hasTz: false,
+  },
+};
 
 export function CreateDocumentForm() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [type, setType] = useState<ContractType>('CRM');
+  const [templateCode, setTemplateCode] = useState(contractTypePresets.CRM.templateCode);
   const [legalType, setLegalType] = useState<LegalType>('OOO');
   const [paymentType, setPaymentType] = useState<PaymentType>('DOUBLE');
   const [hasTz, setHasTz] = useState(true);
@@ -28,6 +57,7 @@ export function CreateDocumentForm() {
 
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
+    city: 'г. Пенза',
     name: '',
     shortName: '',
     inn: '',
@@ -51,6 +81,8 @@ export function CreateDocumentForm() {
     servicePeriodUnit: 'месяца',
     tzPeriodValue: '14',
     tzPeriodUnit: 'дней',
+    warrantyPeriodValue: '1',
+    warrantyPeriodUnit: 'месяц',
   });
 
   const downloadUrl = useMemo(() => {
@@ -68,10 +100,44 @@ export function CreateDocumentForm() {
     }));
   }
 
+  function handleContractTypeChange(nextType: ContractType) {
+    const preset = contractTypePresets[nextType];
+
+    console.log('[create-document-form] type changed', {
+      type: nextType,
+      templateCode: preset.templateCode,
+      legalType: preset.legalType,
+      paymentType: preset.paymentType,
+      hasTz: preset.hasTz,
+    });
+    setType(nextType);
+    setTemplateCode(preset.templateCode);
+    setLegalType(preset.legalType);
+    setPaymentType(preset.paymentType);
+    setHasTz(preset.hasTz);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setResult(null);
+
+    console.log('[create-document-form] submit', {
+      type,
+      templateCode,
+      legalType,
+      paymentType,
+      hasTz,
+      prepaymentPercent: form.prepaymentPercent,
+      postpaymentPercent: form.postpaymentPercent,
+      servicePeriodValue: form.servicePeriodValue,
+      servicePeriodUnit: form.servicePeriodUnit,
+      tzPeriodValue: form.tzPeriodValue,
+      tzPeriodUnit: form.tzPeriodUnit,
+      warrantyPeriodValue: form.warrantyPeriodValue,
+      warrantyPeriodUnit: form.warrantyPeriodUnit,
+      fileName: file?.name,
+    });
 
     if (!file) {
       setError('Загрузите .xlsx смету');
@@ -105,6 +171,8 @@ export function CreateDocumentForm() {
           },
           contract: {
             date: form.date,
+            city: form.city || undefined,
+            templateCode,
             type,
             legalType,
             paymentType,
@@ -119,6 +187,10 @@ export function CreateDocumentForm() {
             servicePeriodUnit: form.servicePeriodUnit || undefined,
             tzPeriodValue: hasTz && form.tzPeriodValue ? Number(form.tzPeriodValue) : undefined,
             tzPeriodUnit: hasTz ? form.tzPeriodUnit || undefined : undefined,
+            warrantyPeriodValue: form.warrantyPeriodValue
+              ? Number(form.warrantyPeriodValue)
+              : undefined,
+            warrantyPeriodUnit: form.warrantyPeriodUnit || undefined,
           },
         },
         file,
@@ -163,7 +235,7 @@ export function CreateDocumentForm() {
               label="Тип"
               value={type}
               values={contractTypes}
-              onChange={value => setType(value as ContractType)}
+              onChange={value => handleContractTypeChange(value as ContractType)}
             />
             <SegmentedGroup
               label="Юр. тип"
@@ -228,6 +300,7 @@ export function CreateDocumentForm() {
           </div>
           <div className="fieldGrid compact">
             <TextField label="Дата" name="date" required type="date" value={form.date} onChange={updateField} />
+            <TextField label="Город" name="city" required value={form.city} onChange={updateField} />
             {paymentType === 'DOUBLE' ? (
               <>
                 <TextField label="Предоплата, %" name="prepaymentPercent" required type="number" value={form.prepaymentPercent} onChange={updateField} />
@@ -242,6 +315,8 @@ export function CreateDocumentForm() {
                 <TextField label="Ед. срока ТЗ" name="tzPeriodUnit" value={form.tzPeriodUnit} onChange={updateField} />
               </>
             ) : null}
+            <TextField label="Гарантия" name="warrantyPeriodValue" type="number" value={form.warrantyPeriodValue} onChange={updateField} />
+            <TextField label="Ед. гарантии" name="warrantyPeriodUnit" value={form.warrantyPeriodUnit} onChange={updateField} />
           </div>
         </section>
 
@@ -272,7 +347,7 @@ export function CreateDocumentForm() {
         ) : null}
 
         <button className="submitButton" disabled={isSubmitting} type="submit">
-          {isSubmitting ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
+          {isSubmitting ? <Loader2 className="spin" size={18} /> : <FileText size={18} />}
           <span>{isSubmitting ? 'Генерация' : 'Сгенерировать договор'}</span>
         </button>
       </form>

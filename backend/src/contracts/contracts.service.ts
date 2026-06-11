@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DocumentsService } from '../documents/documents.service';
 import { EstimatesService } from '../estimates/estimates.service';
 import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
@@ -11,6 +11,8 @@ import { ContractValidationService } from './services/contract-validation.servic
 
 @Injectable()
 export class ContractsService {
+  private readonly logger = new Logger(ContractsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly contractNumberService: ContractNumberService,
@@ -49,10 +51,11 @@ export class ContractsService {
         ? undefined
         : (data.amount * data.postpaymentPercent) / 100;
 
-    return this.prisma.contract.create({
+    const contract = await this.prisma.contract.create({
       data: {
         number,
         date,
+        city: data.city || 'г. Пенза',
         type: data.type,
         legalType: data.legalType,
         paymentType: data.paymentType,
@@ -66,6 +69,8 @@ export class ContractsService {
         servicePeriodUnit: data.servicePeriodUnit,
         tzPeriodValue: data.tzPeriodValue,
         tzPeriodUnit: data.tzPeriodUnit,
+        warrantyPeriodValue: data.warrantyPeriodValue,
+        warrantyPeriodUnit: data.warrantyPeriodUnit,
         clientId: data.clientId,
         templateId: data.templateId,
       } as any,
@@ -75,6 +80,20 @@ export class ContractsService {
         generations: true,
       },
     });
+
+    this.logger.log('[contract] created', {
+      contractId: contract.id,
+      contractNumber: contract.number,
+      templateId: contract.templateId,
+      clientId: contract.clientId,
+      amount: Number(contract.amount),
+      prepaymentPercent: contract.prepaymentPercent,
+      postpaymentPercent: contract.postpaymentPercent,
+      prepaymentAmount: contract.prepaymentAmount === null ? null : Number(contract.prepaymentAmount),
+      postpaymentAmount: contract.postpaymentAmount === null ? null : Number(contract.postpaymentAmount),
+    });
+
+    return contract;
   }
 
   findAll() {
@@ -116,6 +135,19 @@ export class ContractsService {
 
     const estimate = await this.estimatesService.parse(file);
     const amount = estimate.totalAmount;
+    const estimateData = estimate as any;
+    const stages = Array.isArray(estimateData.stages) ? estimateData.stages : [];
+    const worksCount = Array.isArray(estimateData.works)
+      ? estimateData.works.length
+      : stages.reduce((sum, stage) => sum + (Array.isArray(stage.works) ? stage.works.length : 0), 0);
+
+    this.logger.log('[contract-estimate] attaching estimate', {
+      contractId: id,
+      totalAmount: estimate.totalAmount,
+      totalHours: estimate.totalHours,
+      worksCount,
+    });
+
     const prepaymentAmount =
       contract.paymentType === 'DOUBLE' && contract.prepaymentPercent !== null
         ? (amount * contract.prepaymentPercent) / 100
@@ -137,6 +169,12 @@ export class ContractsService {
         template: true,
         generations: true,
       },
+    });
+
+    this.logger.log('[contract-estimate] amounts recalculated', {
+      amount,
+      prepaymentAmount,
+      postpaymentAmount,
     });
 
     return {
@@ -173,6 +211,10 @@ export class ContractsService {
 
   private async resolveClient(data: FullGenerateContractDto) {
     if (data.clientId) {
+      this.logger.log('[client] using existing client', {
+        clientId: data.clientId,
+      });
+
       const client = await this.prisma.client.findUnique({
         where: { id: data.clientId },
       });
@@ -188,14 +230,50 @@ export class ContractsService {
       throw new BadRequestException('client or clientId is required');
     }
 
-    return this.prisma.client.create({
+    this.logger.log('[client] creating new client', {
+      legalType: data.client.legalType,
+      name: data.client.name,
+      inn: data.client.inn,
+    });
+
+    const client = await this.prisma.client.create({
       data: data.client,
     });
+
+    this.logger.log('[client] created', {
+      clientId: client.id,
+    });
+
+    return client;
   }
 
   private async resolveTemplateId(data: FullGenerateContractDto) {
+    this.logger.log('[template-search] params', {
+      type: data.contract.type,
+      legalType: data.contract.legalType,
+      paymentType: data.contract.paymentType,
+      hasTz: data.contract.hasTz,
+      isActive: true,
+      templateId: data.contract.templateId,
+      templateCode: data.contract.templateCode,
+    });
+
     if (data.contract.templateId) {
       return data.contract.templateId;
+    }
+
+    if (data.contract.templateCode) {
+      const template = await this.prisma.template.findUnique({
+        where: {
+          code: data.contract.templateCode,
+        },
+      });
+
+      if (!template) {
+        throw new NotFoundException('Template not found');
+      }
+
+      return template.id;
     }
 
     const template = await this.prisma.template.findFirst({
@@ -210,8 +288,22 @@ export class ContractsService {
     });
 
     if (!template) {
+      this.logger.warn('[template-search] template not found', {
+        type: data.contract.type,
+        legalType: data.contract.legalType,
+        paymentType: data.contract.paymentType,
+        hasTz: data.contract.hasTz,
+        isActive: true,
+      });
+
       throw new NotFoundException('Template not found');
     }
+
+    this.logger.log('[template-search] found template', {
+      templateId: template.id,
+      code: template.code,
+      filePath: template.filePath,
+    });
 
     return template.id;
   }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TemplatesService {
+  private readonly logger = new Logger(TemplatesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
@@ -28,6 +30,12 @@ export class TemplatesService {
     return templates.map(template => {
       const fullPath = join(templatesPath, template.filePath);
       const fileExists = existsSync(fullPath);
+      this.logger.log('[template-file] file exists', {
+        templatesPath,
+        templateFilePath: template.filePath,
+        fullPath,
+        exists: fileExists,
+      });
 
       return {
         id: template.id,
@@ -59,6 +67,14 @@ export class TemplatesService {
       './storage/templates';
 
     const fullPath = join(templatesPath, template.filePath);
+    const fileExists = existsSync(fullPath);
+
+    this.logger.log('[template-file] file exists', {
+      templatesPath,
+      templateFilePath: template.filePath,
+      fullPath,
+      exists: fileExists,
+    });
 
     return {
       id: template.id,
@@ -69,7 +85,7 @@ export class TemplatesService {
       paymentType: template.paymentType,
       hasTz: template.hasTz,
       filePath: template.filePath,
-      fileExists: existsSync(fullPath),
+      fileExists,
     };
   }
 }

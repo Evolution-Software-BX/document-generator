@@ -21,8 +21,16 @@ export class CreateContractDto {
   @IsPositive()
   templateId!: number;
 
+  @IsOptional()
+  @IsString()
+  templateCode?: string;
+
   @IsDateString()
   date!: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 
   @IsEnum(ContractType)
   type!: ContractType;
@@ -70,4 +78,13 @@ export class CreateContractDto {
   @IsOptional()
   @IsString()
   tzPeriodUnit?: string;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  warrantyPeriodValue?: number;
+
+  @IsOptional()
+  @IsString()
+  warrantyPeriodUnit?: string;
 }
