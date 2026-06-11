@@ -1,4 +1,5 @@
 import { FileCheck, FileText, FolderOpen, Users } from 'lucide-react';
+import { CreateDocumentForm } from '@/features/create-document/CreateDocumentForm';
 import { Header } from '@/widgets/header/Header';
 import { Sidebar } from '@/widgets/sidebar/Sidebar';
 
@@ -33,24 +34,24 @@ export default function Home() {
           })}
         </section>
         <section className="contentGrid">
+          <CreateDocumentForm />
           <div className="panel">
             <div className="panelHeader">
-              <h2>Recent contracts</h2>
-              <button>New contract</button>
+              <h2>Шаблоны</h2>
             </div>
-            <div className="emptyState">
-              <FileText size={28} />
-              <p>No contracts yet</p>
-            </div>
-          </div>
-          <div className="panel">
-            <div className="panelHeader">
-              <h2>Templates</h2>
-              <button>Upload</button>
-            </div>
-            <div className="emptyState">
-              <FolderOpen size={28} />
-              <p>No templates uploaded</p>
+            <div className="templateSummary">
+              <div>
+                <FolderOpen size={20} />
+                <span>CRM, ООО, двойная оплата</span>
+              </div>
+              <div>
+                <FolderOpen size={20} />
+                <span>Сайт, ИП, 1 оплата с ТЗ</span>
+              </div>
+              <div>
+                <FolderOpen size={20} />
+                <span>Обучение, ООО, 1 оплата</span>
+              </div>
             </div>
           </div>
         </section>

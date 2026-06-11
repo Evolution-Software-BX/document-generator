@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentsService } from '../documents/documents.service';
 import { EstimatesService } from '../estimates/estimates.service';
 import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContractDto } from './dto/create-contract.dto';
+import { FullGenerateContractDto } from './dto/full-generate-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { ContractNumberService } from './services/contract-number.service';
 import { ContractValidationService } from './services/contract-validation.service';
@@ -146,5 +147,72 @@ export class ContractsService {
 
   generate(id: number) {
     return this.documentsService.generateContract(id);
+  }
+
+  async fullGenerate(data: FullGenerateContractDto, file?: EstimateUploadFile) {
+    const client = await this.resolveClient(data);
+    const templateId = await this.resolveTemplateId(data);
+    const estimate = await this.estimatesService.parse(file);
+    const contract = await this.create({
+      ...data.contract,
+      clientId: client.id,
+      templateId,
+      amount: estimate.totalAmount,
+    });
+
+    await this.attachEstimate(contract.id, file);
+    const generation = await this.generate(contract.id);
+
+    return {
+      contractId: contract.id,
+      generationId: generation.generationId,
+      fileName: generation.fileName,
+      downloadUrl: generation.downloadUrl,
+    };
+  }
+
+  private async resolveClient(data: FullGenerateContractDto) {
+    if (data.clientId) {
+      const client = await this.prisma.client.findUnique({
+        where: { id: data.clientId },
+      });
+
+      if (!client) {
+        throw new NotFoundException('Client not found');
+      }
+
+      return client;
+    }
+
+    if (!data.client) {
+      throw new BadRequestException('client or clientId is required');
+    }
+
+    return this.prisma.client.create({
+      data: data.client,
+    });
+  }
+
+  private async resolveTemplateId(data: FullGenerateContractDto) {
+    if (data.contract.templateId) {
+      return data.contract.templateId;
+    }
+
+    const template = await this.prisma.template.findFirst({
+      where: {
+        isActive: true,
+        type: data.contract.type,
+        legalType: data.contract.legalType,
+        paymentType: data.contract.paymentType,
+        hasTz: data.contract.hasTz,
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    if (!template) {
+      throw new NotFoundException('Template not found');
+    }
+
+    return template.id;
   }
 }

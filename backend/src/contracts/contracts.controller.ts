@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  BadRequestException,
   Get,
   Param,
   Patch,
@@ -13,6 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { EstimateUploadFile } from '../estimates/types/parsed-estimate.type';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
+import { FullGenerateContractDto } from './dto/full-generate-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 
 @Controller('contracts')
@@ -22,6 +24,24 @@ export class ContractsController {
   @Post()
   create(@Body() data: CreateContractDto) {
     return this.contractsService.create(data);
+  }
+
+  @Post('full-generate')
+  @UseInterceptors(FileInterceptor('file'))
+  fullGenerate(@Body('payload') payload: string, @UploadedFile() file?: EstimateUploadFile) {
+    if (!payload) {
+      throw new BadRequestException('Payload is required');
+    }
+
+    let parsedPayload: FullGenerateContractDto;
+
+    try {
+      parsedPayload = JSON.parse(payload) as FullGenerateContractDto;
+    } catch {
+      throw new BadRequestException('Payload must be valid JSON');
+    }
+
+    return this.contractsService.fullGenerate(parsedPayload, file);
   }
 
   @Post(':id/estimate')
