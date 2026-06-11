@@ -52,7 +52,11 @@ const contractTypePresets: Record<
   },
 };
 
-export function CreateDocumentForm() {
+interface CreateDocumentFormProps {
+  onGenerated?: () => void;
+}
+
+export function CreateDocumentForm({ onGenerated }: CreateDocumentFormProps) {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [type, setType] = useState<ContractType>('CRM');
   const [templateCode, setTemplateCode] = useState(contractTypePresets.CRM.templateCode);
@@ -206,6 +210,7 @@ export function CreateDocumentForm() {
       );
 
       setResult(response);
+      onGenerated?.();
     } catch (requestError) {
       setError(
         requestError instanceof Error

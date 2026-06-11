@@ -7,6 +7,7 @@ import storageConfig from './config/storage.config';
 import { AuthModule } from './auth/auth.module';
 import { ClientsModule } from './clients/clients.module';
 import { ContractsModule } from './contracts/contracts.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EstimatesModule } from './estimates/estimates.module';
 import { FilesModule } from './files/files.module';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ClientsModule,
     ContractsModule,
+    DashboardModule,
     DocumentsModule,
     EstimatesModule,
     FilesModule,

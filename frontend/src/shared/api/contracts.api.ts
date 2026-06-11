@@ -57,6 +57,13 @@ export interface ApiContract {
   generations?: ApiGeneration[];
 }
 
+export interface DashboardStats {
+  clientsCount: number;
+  contractsCount: number;
+  templatesCount: number;
+  generatedCount: number;
+}
+
 export async function fullGenerateContract(
   payload: FullGeneratePayload,
   file: File,
@@ -113,6 +120,10 @@ export async function getContract(id: number): Promise<ApiContract | null> {
 
 export async function getGenerations(): Promise<ApiGeneration[]> {
   return request('/generations');
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  return request('/dashboard/stats');
 }
 
 export async function getGeneration(id: number): Promise<ApiGeneration | null> {
