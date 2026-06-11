@@ -25,15 +25,45 @@ export class GenerationService {
   findAll() {
     return this.prisma.generation.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { contract: true },
-    });
+      include: {
+        contract: {
+          include: {
+            client: true,
+            template: true,
+          },
+        },
+      },
+    }).then(generations =>
+      generations.map(generation => ({
+        ...generation,
+        externalSource: null,
+        externalId: null,
+      })),
+    );
   }
 
-  findOne(id: number) {
-    return this.prisma.generation.findUnique({
+  async findOne(id: number) {
+    const generation = await this.prisma.generation.findUnique({
       where: { id },
-      include: { contract: true },
+      include: {
+        contract: {
+          include: {
+            client: true,
+            template: true,
+          },
+        },
+      },
     });
+
+    if (!generation) {
+      return null;
+    }
+
+    return {
+      ...generation,
+      externalSource: null,
+      externalId: null,
+    };
   }
 
   markSuccess(id: number, fileName: string, filePath: string) {

@@ -72,6 +72,7 @@ button {
   color: #dbe5ef;
   padding: 0 10px;
   text-align: left;
+  text-decoration: none;
 }
 
 .navItem:hover {
@@ -434,6 +435,120 @@ h2 {
   background: var(--surface);
 }
 
+.pagePanel {
+  margin-top: 24px;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dataTable th,
+.dataTable td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.dataTable th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionLink,
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.backLink {
+  margin: 14px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.detailsWide {
+  grid-column: 1 / -1;
+}
+
+.detailsList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 6px 16px 16px;
+}
+
+.detailsList div {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.4fr) minmax(0, 1fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.detailsList dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.detailsList dd {
+  margin: 0;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.statusBadge.success {
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  color: var(--success);
+}
+
+.statusBadge.failed {
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+  color: var(--danger);
+}
+
+.statusBadge.processing,
+.statusBadge.pending {
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+  color: var(--warning);
+}
+
 .panelHeader {
   display: flex;
   align-items: center;
@@ -471,7 +586,8 @@ h2 {
   }
 
   .metricsGrid,
-  .contentGrid {
+  .contentGrid,
+  .detailsGrid {
     grid-template-columns: 1fr;
   }
 

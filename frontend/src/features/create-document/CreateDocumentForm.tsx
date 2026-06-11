@@ -14,6 +14,15 @@ import {
 const contractTypes: ContractType[] = ['CRM', 'SITE', 'TRAINING'];
 const legalTypes: LegalType[] = ['OOO', 'IP'];
 const paymentTypes: PaymentType[] = ['SINGLE', 'DOUBLE'];
+const optionLabels: Record<ContractType | LegalType | PaymentType, string> = {
+  CRM: 'CRM',
+  SITE: 'Сайт',
+  TRAINING: 'Обучение',
+  OOO: 'ООО',
+  IP: 'ИП',
+  SINGLE: 'Одна оплата',
+  DOUBLE: 'Две оплаты',
+};
 const contractTypePresets: Record<
   ContractType,
   {
@@ -367,7 +376,7 @@ interface TextFieldProps {
 function TextField({ label, name, value, onChange, required, type = 'text' }: TextFieldProps) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span>{required ? `${label} *` : label}</span>
       <input name={name} required={required} type={type} value={value} onChange={onChange} />
     </label>
   );
@@ -392,7 +401,7 @@ function SegmentedGroup({ label, value, values, onChange }: SegmentedGroupProps)
             type="button"
             onClick={() => onChange(item)}
           >
-            {item}
+            {optionLabels[item as ContractType | LegalType | PaymentType] ?? item}
           </button>
         ))}
       </div>

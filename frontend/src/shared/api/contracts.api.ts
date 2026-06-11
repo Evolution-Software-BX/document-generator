@@ -4,6 +4,59 @@ import type {
   FullGenerateResponse,
 } from '@/features/create-document/types';
 
+export interface ApiClient {
+  id: number;
+  legalType: string;
+  name: string;
+  shortName?: string | null;
+  inn?: string | null;
+}
+
+export interface ApiTemplate {
+  id: number;
+  code: string;
+  name: string;
+  filePath: string;
+}
+
+export interface ApiGeneration {
+  id: number;
+  contractId: number;
+  status: 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+  fileName?: string | null;
+  filePath?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  externalSource?: string | null;
+  externalId?: string | null;
+  contract?: ApiContract;
+}
+
+export interface ApiContract {
+  id: number;
+  number: string;
+  date: string;
+  city: string;
+  type: string;
+  legalType: string;
+  paymentType: string;
+  amount: string | number;
+  prepaymentPercent?: number | null;
+  postpaymentPercent?: number | null;
+  prepaymentAmount?: string | number | null;
+  postpaymentAmount?: string | number | null;
+  estimateJson?: unknown;
+  createdAt: string;
+  updatedAt: string;
+  externalSource?: string | null;
+  externalId?: string | null;
+  client?: ApiClient | null;
+  template?: ApiTemplate | null;
+  latestGeneration?: ApiGeneration | null;
+  generations?: ApiGeneration[];
+}
+
 export async function fullGenerateContract(
   payload: FullGeneratePayload,
   file: File,
@@ -48,4 +101,37 @@ export async function fullGenerateContract(
   console.log('[frontend/full-generate] response success', result);
 
   return result;
+}
+
+export async function getContracts(): Promise<ApiContract[]> {
+  return request('/contracts');
+}
+
+export async function getContract(id: number): Promise<ApiContract | null> {
+  return request(`/contracts/${id}`);
+}
+
+export async function getGenerations(): Promise<ApiGeneration[]> {
+  return request('/generations');
+}
+
+export async function getGeneration(id: number): Promise<ApiGeneration | null> {
+  return request(`/generations/${id}`);
+}
+
+export function generationDownloadUrl(id: number) {
+  return `${env.apiUrl}/generations/${id}/download`;
+}
+
+async function request<T>(path: string): Promise<T> {
+  const response = await fetch(`${env.apiUrl}${path}`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? `Request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
 }

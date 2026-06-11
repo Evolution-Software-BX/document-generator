@@ -99,15 +99,47 @@ export class ContractsService {
   findAll() {
     return this.prisma.contract.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { client: true, template: true },
-    });
+      include: {
+        client: true,
+        template: true,
+        generations: {
+          where: { status: 'SUCCESS' },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    }).then(contracts =>
+      contracts.map(contract => ({
+        ...contract,
+        externalSource: null,
+        externalId: null,
+        latestGeneration: contract.generations[0] ?? null,
+        generations: undefined,
+      })),
+    );
   }
 
-  findOne(id: number) {
-    return this.prisma.contract.findUnique({
+  async findOne(id: number) {
+    const contract = await this.prisma.contract.findUnique({
       where: { id },
-      include: { client: true, template: true, generations: true },
+      include: {
+        client: true,
+        template: true,
+        generations: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
+
+    if (!contract) {
+      return null;
+    }
+
+    return {
+      ...contract,
+      externalSource: null,
+      externalId: null,
+    };
   }
 
   update(id: number, data: UpdateContractDto) {
