@@ -549,6 +549,18 @@ h2 {
   color: var(--warning);
 }
 
+.mutedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .panelHeader {
   display: flex;
   align-items: center;

@@ -5,6 +5,7 @@ const items = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Clients', href: '/', icon: Users },
   { label: 'Contracts', href: '/contracts', icon: FileText },
+  { label: 'Templates', href: '/templates', icon: Folder },
   { label: 'Generated', href: '/generated', icon: Folder },
   { label: 'Settings', href: '/', icon: Settings },
 ];

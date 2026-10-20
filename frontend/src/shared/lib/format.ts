@@ -46,6 +46,27 @@ export function paymentTypeLabel(value?: string | null) {
   return value ? labels[value] ?? value : '—';
 }
 
+export function legalTypeLabel(value?: string | null) {
+  const labels: Record<string, string> = {
+    OOO: 'ООО',
+    IP: 'ИП',
+  };
+
+  return value ? labels[value] ?? value : '—';
+}
+
+export function booleanLabel(value?: boolean | null) {
+  if (value === true) {
+    return 'Да';
+  }
+
+  if (value === false) {
+    return 'Нет';
+  }
+
+  return '—';
+}
+
 export function statusLabel(value?: string | null) {
   const labels: Record<string, string> = {
     PENDING: 'Ожидает',

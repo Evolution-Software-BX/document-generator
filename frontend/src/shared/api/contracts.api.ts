@@ -16,7 +16,13 @@ export interface ApiTemplate {
   id: number;
   code: string;
   name: string;
+  type?: string | null;
+  legalType?: string | null;
+  paymentType?: string | null;
+  hasTz?: boolean | null;
+  isActive: boolean;
   filePath: string;
+  fileExists?: boolean;
 }
 
 export interface ApiGeneration {
@@ -124,6 +130,14 @@ export async function getGenerations(): Promise<ApiGeneration[]> {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   return request('/dashboard/stats');
+}
+
+export async function getTemplates(): Promise<ApiTemplate[]> {
+  return request('/templates');
+}
+
+export async function getTemplate(id: number): Promise<ApiTemplate | null> {
+  return request(`/templates/${id}`);
 }
 
 export async function getGeneration(id: number): Promise<ApiGeneration | null> {

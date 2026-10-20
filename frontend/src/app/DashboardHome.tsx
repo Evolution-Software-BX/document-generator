@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { FileCheck, FileText, FolderOpen, Users } from 'lucide-react';
 import { CreateDocumentForm } from '@/features/create-document/CreateDocumentForm';
-import { getDashboardStats } from '@/shared/api/contracts.api';
-import type { DashboardStats } from '@/shared/api/contracts.api';
+import { getDashboardStats, getTemplates } from '@/shared/api/contracts.api';
+import type { ApiTemplate, DashboardStats } from '@/shared/api/contracts.api';
 
 const initialStats: DashboardStats = {
   clientsCount: 0,
@@ -15,6 +15,7 @@ const initialStats: DashboardStats = {
 
 export function DashboardHome() {
   const [stats, setStats] = useState<DashboardStats>(initialStats);
+  const [templates, setTemplates] = useState<ApiTemplate[]>([]);
 
   async function refreshStats() {
     const nextStats = await getDashboardStats();
@@ -23,6 +24,7 @@ export function DashboardHome() {
 
   useEffect(() => {
     refreshStats().catch(() => undefined);
+    getTemplates().then(setTemplates).catch(() => undefined);
   }, []);
 
   const metrics = [
@@ -58,18 +60,14 @@ export function DashboardHome() {
             <h2>Шаблоны</h2>
           </div>
           <div className="templateSummary">
-            <div>
-              <FolderOpen size={20} />
-              <span>CRM, ООО, двойная оплата</span>
-            </div>
-            <div>
-              <FolderOpen size={20} />
-              <span>Сайт, ИП, 1 оплата с ТЗ</span>
-            </div>
-            <div>
-              <FolderOpen size={20} />
-              <span>Обучение, ООО, 1 оплата</span>
-            </div>
+            {templates.map(template => (
+              <div key={template.id}>
+                <FolderOpen size={20} />
+                <span>{template.name}</span>
+                {!template.isActive ? <span className="mutedBadge">Неактивен</span> : null}
+              </div>
+            ))}
+            {templates.length === 0 ? <div>Шаблоны не найдены</div> : null}
           </div>
         </div>
       </section>

@@ -15,9 +15,6 @@ export class TemplatesService {
 
   async findAll() {
     const templates = await this.prisma.template.findMany({
-      where: {
-        isActive: true,
-      },
       orderBy: {
         id: 'asc',
       },
@@ -45,6 +42,7 @@ export class TemplatesService {
         legalType: template.legalType,
         paymentType: template.paymentType,
         hasTz: template.hasTz,
+        isActive: template.isActive,
         filePath: template.filePath,
         fileExists,
       };
@@ -84,6 +82,7 @@ export class TemplatesService {
       legalType: template.legalType,
       paymentType: template.paymentType,
       hasTz: template.hasTz,
+      isActive: template.isActive,
       filePath: template.filePath,
       fileExists,
     };
